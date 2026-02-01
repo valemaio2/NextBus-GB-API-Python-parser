@@ -32,7 +32,7 @@
     {
       "crs": "CDF",
       "name": "Cardiff Central"
-    },
+    }
   ],
 
   "num_departures": 6,
