@@ -43,6 +43,12 @@ https://beta-naptan.dft.gov.uk/download/la
 I have included the bus stop code list for Cardiff in file *bus stop codes.xlsx*, but you will need to find the list for your local authority.
 
 ## Usage:
+### One-line installation:
+```
+bash <(curl -fsSL https://raw.githubusercontent.com/valemaio2/NextBus-GB-API-Python-parser/main/installer.sh)
+```
+
+### Manual installation:
 * Install python3 and pip
 * Install pip requirements in requirements.txt (Flask, flask-cors, requests, beautifulsoup4)
 * *Optional:* set up python environment with python -m venv /path/to/your/environment
