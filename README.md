@@ -8,7 +8,8 @@ https://gitlab.developers.cam.ac.uk/cscs/nextbuses-api-python-parser
 
 As per the original GitLab project, this is a Python parser for the NextBus API. It will send a request, do some magic behind the scene and output a human-readable HTML file with the next buses departures from the bus stops of your choice:
 
-![immagine](https://github.com/user-attachments/assets/1242a7b3-fbe8-4e46-87f5-50c87919f625)
+<img width="3938" height="2294" alt="image" src="https://github.com/user-attachments/assets/d8a3ce1b-6669-46b0-b498-bf7dafbef871" />
+
 
 This should work for any bus authority within England, Wales and Scotland. I couldn't find the ATCO codes for bus stops in Northern Ireland, so unfortunately this is untested for NI.
 
