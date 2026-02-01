@@ -61,6 +61,13 @@
     border-bottom: 1px solid #222;
   }}
 
+  /* Bus column spacing */
+  td:nth-child(3),
+  td:nth-child(4),
+  td:nth-child(5) {{
+    padding-right: 24px;
+  }}
+
   .on-time {{
     color: #7CFC00;
   }}
@@ -69,10 +76,7 @@
     color: #ff4444;
   }}
 
-  .due-soon {{
-    color: #ffd700;
-  }}
-
+  /* Train cards */
   .train-card {{
     background: #00112b;
     padding: 15px 20px;
@@ -89,40 +93,24 @@
     letter-spacing: 1px;
   }}
 
-  .train-table {{
-    width: 100%;
-    border-collapse: collapse;
+  /* Train column spacing WITHOUT overriding colours */
+  .train-table td:nth-child(2),
+  .train-table td:nth-child(3),
+  .train-table td:nth-child(4) {{
+    padding-right: 24px !important;
+    color: inherit !important;
   }}
 
-  .train-table th {{
-    text-align: left;
-    padding: 6px 0;
-    font-size: 1rem;
-    color: #9bbcff;
-    border-bottom: 1px solid #123;
-  }}
-
-  .train-table td {{
-    padding: 10px 0;
-    font-size: 1.3rem;
-    border-bottom: 1px solid #123;
-    color: #fff;
-  }}
-
-  .train-time {{
-    color: #ffdd00;
-    font-weight: bold;
-  }}
-
-  .train-table td.train-on-time {{
+  /* Train status colours */
+  .train-on-time {{
     color: #00ff66 !important;
   }}
 
-  .train-table td.train-delayed {{
+  .train-delayed {{
     color: #ff4444 !important;
   }}
 
-  .train-table td.train-due-soon {{
+  .train-due-soon {{
     color: #ffdd00 !important;
   }}
 
@@ -134,18 +122,24 @@
     font-family: "DejaVu Sans Mono", "Consolas", monospace;
   }}
 
-  /* Add spacing between Sched, Exp, and Plat columns */
-  td:nth-child(3),
-  td:nth-child(4),
-  td:nth-child(5) {{
-      padding-right: 24px;
+  #last-updated {{
+    margin-top: 10px;
+    text-align: center;
+    font-size: 1.2rem;
+    color: #bbb;
+    font-family: "DejaVu Sans Mono", "Consolas", monospace;
+  }}
+  /* Force correct colours for train Exp column */
+  .train-table td.train-on-time {{
+      color: #00ff66 !important;
   }}
 
-  /* Extra spacing for train Sched, Exp, Plat columns */
-  .train-table td:nth-child(2),
-  .train-table td:nth-child(3),
-  .train-table td:nth-child(4) {{
-      padding-right: 24px !important;
+  .train-table td.train-due-soon {{
+      color: #ffdd00 !important;
+  }}
+
+  .train-table td.train-delayed {{
+      color: #ff4444 !important;
   }}
 
 </style>
@@ -160,20 +154,49 @@
 </div>
 
 <div id="live-clock"></div>
+<div id="last-updated">Last updated: {last_updated} (Europe/London)</div>
 
 <script>
+let currentTime = null;
+
+async function syncTime() {{
+    try {{
+        const res = await fetch("https://timeapi.io/api/Time/current/zone?timeZone=Europe/London");
+        const data = await res.json();
+
+        currentTime = new Date(
+            data.year,
+            data.month - 1,
+            data.day,
+            data.hour,
+            data.minute,
+            data.seconds
+        );
+    }} catch (e) {{
+        console.error("Time sync failed", e);
+        currentTime = new Date();
+    }}
+}}
+
 function updateClock() {{
-    const now = new Date();
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const seconds = now.getSeconds().toString().padStart(2, '0');
+    if (!currentTime) return;
+
+    currentTime = new Date(currentTime.getTime() + 1000);
+
+    const hours = currentTime.getHours().toString().padStart(2, '0');
+    const minutes = currentTime.getMinutes().toString().padStart(2, '0');
+    const seconds = currentTime.getSeconds().toString().padStart(2, '0');
 
     document.getElementById("live-clock").textContent =
         hours + ":" + minutes + ":" + seconds;
 }}
 
-setInterval(updateClock, 1000);
-updateClock();
+syncTime().then(() => {{
+    updateClock();
+    setInterval(updateClock, 1000);
+}});
+
+setInterval(syncTime, 10 * 60 * 1000);
 </script>
 
 </body>
