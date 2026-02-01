@@ -16,7 +16,15 @@ This should work for any bus authority within England, Wales and Scotland. I cou
 
 * In bus.py, made it so the expected and scheduled departure times are shown in the local timezone, rather than in UTC
 * In config.json, added the parameter *"num_departures": 6,* so that you can choose how many arrivals to show for each bus stop. Of course, change 6 to whatever value you need.
+* Added an optional part for train stations. It scrapes the data from https://www.realtimetrains.co.uk/ and the config.json needs the 3-letter staion code (PAD for London Paddington, MAN for Manchester Piccadilly, LPG for Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch and so on).
+  Train stations are not mandatory; to disable them, simply set the "train_stations" part in config.json to
 
+  ```
+  "train_stations": [
+  ],
+  ```
+  or to an invalid train station code. On the same vein as the bus stops, you can add as many train stations as you want.
+  
 ## NextBus API
 
 To be able to use this parser, you will need to request a NextBus API account. As of writing this, they provide 180,000 free hits every 6 months. To request access to the API, please follow this link:
@@ -35,13 +43,13 @@ I have included the bus stop code list for Cardiff in file *bus stop codes.xlsx*
 
 ## Usage:
 * Install python3 and pip
-* Install pip requirements in requirements.txt (Flask, flask-cors, requests)
+* Install pip requirements in requirements.txt (Flask, flask-cors, requests, beautifulsoup4)
 * *Optional:* set up python environment with python -m venv /path/to/your/environment
 * Search bus stop in google maps and copy bus stop ID
 * Open spreadsheet file from https://beta-naptan.dft.gov.uk/download/la, search for bus stop ID and copy matching ATCOcode
-* Edit config.json with desired bus stop code and number of departures to show, plus your NextBus API username and password
+* Edit config.json with desired bus stop code, train station code and number of departures to show, plus your NextBus API username and password
 * Run the parser and HTML page builder with:
-  ```python sync.py config.json && python generate.py config.json```
+  ```python train_fetch.py config.json data/ && python sync.py config.json && python generate.py config.json```
 * The resulting page will be in html/buses.html
 
 ## A word about Python <3.11 and datetime
