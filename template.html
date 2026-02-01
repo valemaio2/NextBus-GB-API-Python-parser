@@ -133,6 +133,21 @@
     color: #ffdd00;
     font-family: "DejaVu Sans Mono", "Consolas", monospace;
   }}
+
+  /* Add spacing between Sched, Exp, and Plat columns */
+  td:nth-child(3),
+  td:nth-child(4),
+  td:nth-child(5) {{
+      padding-right: 24px;
+  }}
+
+  /* Extra spacing for train Sched, Exp, Plat columns */
+  .train-table td:nth-child(2),
+  .train-table td:nth-child(3),
+  .train-table td:nth-child(4) {{
+      padding-right: 24px !important;
+  }}
+
 </style>
 
 </head>
