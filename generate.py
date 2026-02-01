@@ -21,10 +21,6 @@ html_path = settings["html"]
 output_html_filename = os.path.join(html_path, settings["output_html_file"])
 page_title = settings["output_html_title"]
 
-# Train station config
-train_crs = settings["train_station"]["crs"]
-train_name = settings["train_station"]["name"]
-
 num_deps = settings["num_departures"]
 
 # ---------------------------------------------------------
@@ -41,8 +37,12 @@ for stop in settings["stops"]:
 # TRAIN PARSER (Realtime Trains simple view)
 # ---------------------------------------------------------
 def parse_train_html(filename, station_name):
+    """Parse a Realtime Trains simple-view HTML file."""
     with open(filename, encoding="utf-8") as f:
         html = f.read()
+
+    if not html.strip():
+        return []  # empty file → no trains
 
     soup = BeautifulSoup(html, "html.parser")
     results = []
@@ -95,8 +95,7 @@ def parse_train_html(filename, station_name):
         )
 
         results.append({
-            "bus_stop": station_name,
-            "line_name": "Train",
+            "station": station_name,
             "direction": dest,
             "scheduled_departure": sched_dt,
             "expected_departure": exp_dt,
@@ -106,10 +105,29 @@ def parse_train_html(filename, station_name):
     return results
 
 # ---------------------------------------------------------
-# Load TRAIN departures
+# Load TRAIN departures for multiple stations
 # ---------------------------------------------------------
-train_file = os.path.join(data_path, "train.latest.html")
-train_departures = parse_train_html(train_file, train_name)[:num_deps]
+train_departures_by_station = []
+
+stations = settings.get("train_stations", [])
+
+for st in stations:
+    crs = st.get("crs", "").strip().upper()
+    name = st.get("name", "").strip()
+
+    # Skip disabled or invalid CRS
+    if not crs or crs == "NO":
+        continue
+
+    filename = os.path.join(data_path, f"train_{crs}.latest.html")
+
+    try:
+        deps = parse_train_html(filename, name)[:num_deps]
+        if len(deps) > 0:
+            train_departures_by_station.append((name, deps))
+    except Exception:
+        # Skip silently on any error
+        continue
 
 # ---------------------------------------------------------
 # Load HTML template
@@ -153,36 +171,37 @@ for stop_name, deps in grouped.items():
 
     content += "</table></div>"
 
-# TRAIN CARD
-content += "<div class='train-card'>"
-content += f"<div class='train-title'>{train_name} (Train)</div>"
-content += "<table class='train-table'>"
-content += "<tr><th>To</th><th>Sched</th><th>Exp</th><th>Plat</th></tr>"
+# TRAIN CARDS (one per station)
+for station_name, deps in train_departures_by_station:
+    content += "<div class='train-card'>"
+    content += f"<div class='train-title'>{station_name} (Train)</div>"
+    content += "<table class='train-table'>"
+    content += "<tr><th>To</th><th>Sched</th><th>Exp</th><th>Plat</th></tr>"
 
-for t in train_departures:
-    sched = t["scheduled_departure"].astimezone().strftime("%H:%M")
-    exp = t["expected_departure"].astimezone().strftime("%H:%M")
-    plat = t.get("platform", "")
+    for t in deps:
+        sched = t["scheduled_departure"].astimezone().strftime("%H:%M")
+        exp = t["expected_departure"].astimezone().strftime("%H:%M")
+        plat = t.get("platform", "")
 
-    diff = int((t["expected_departure"] - t["scheduled_departure"]).total_seconds() / 60)
+        diff = int((t["expected_departure"] - t["scheduled_departure"]).total_seconds() / 60)
 
-    if diff <= 0:
-        status_class = "train-on-time"
-    elif diff <= 5:
-        status_class = "train-due-soon"
-    else:
-        status_class = "train-delayed"
+        if diff <= 0:
+            status_class = "train-on-time"
+        elif diff <= 5:
+            status_class = "train-due-soon"
+        else:
+            status_class = "train-delayed"
 
-    content += (
-        f"<tr>"
-        f"<td>{t['direction']}</td>"
-        f"<td class='train-time'>{sched}</td>"
-        f"<td class='{status_class}'>{exp}</td>"
-        f"<td>{plat}</td>"
-        f"</tr>"
-    )
+        content += (
+            f"<tr>"
+            f"<td>{t['direction']}</td>"
+            f"<td class='train-time'>{sched}</td>"
+            f"<td class='{status_class}'>{exp}</td>"
+            f"<td>{plat}</td>"
+            f"</tr>"
+        )
 
-content += "</table></div>"
+    content += "</table></div>"
 
 # ---------------------------------------------------------
 # Write final HTML
