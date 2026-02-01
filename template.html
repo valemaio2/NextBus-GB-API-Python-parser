@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>{title}</title>
+
+<style>
+  body {{
+    margin: 0;
+    padding: 20px;
+    background: #111;
+    color: #eee;
+    font-family: Arial, sans-serif;
+  }}
+
+  h1 {{
+    margin-bottom: 20px;
+    font-size: 2.2rem;
+    text-align: center;
+    color: #fff;
+  }}
+
+  .grid {{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-gap: 20px;
+    margin-top: 20px;
+  }}
+
+  .stop-card {{
+    background: #1b1b1b;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px #000;
+  }}
+
+  .stop-title {{
+    font-size: 1.6rem;
+    margin-bottom: 10px;
+    color: #4da3ff;
+  }}
+
+  table {{
+    width: 100%;
+    border-collapse: collapse;
+  }}
+
+  th {{
+    text-align: left;
+    padding: 6px 0;
+    font-size: 1rem;
+    color: #bbb;
+    border-bottom: 1px solid #333;
+  }}
+
+  td {{
+    padding: 8px 0;
+    font-size: 1.2rem;
+    border-bottom: 1px solid #222;
+  }}
+
+  .on-time {{
+    color: #7CFC00;
+  }}
+
+  .delayed {{
+    color: #ff4444;
+  }}
+
+  .due-soon {{
+    color: #ffd700;
+  }}
+
+  .train-card {{
+    background: #00112b;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 12px #000;
+    font-family: "DejaVu Sans Mono", "Consolas", monospace;
+  }}
+
+  .train-title {{
+    font-size: 1.6rem;
+    margin-bottom: 12px;
+    color: #ffdd00;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }}
+
+  .train-table {{
+    width: 100%;
+    border-collapse: collapse;
+  }}
+
+  .train-table th {{
+    text-align: left;
+    padding: 6px 0;
+    font-size: 1rem;
+    color: #9bbcff;
+    border-bottom: 1px solid #123;
+  }}
+
+  .train-table td {{
+    padding: 10px 0;
+    font-size: 1.3rem;
+    border-bottom: 1px solid #123;
+    color: #fff;
+  }}
+
+  .train-time {{
+    color: #ffdd00;
+    font-weight: bold;
+  }}
+
+  .train-table td.train-on-time {{
+    color: #00ff66 !important;
+  }}
+
+  .train-table td.train-delayed {{
+    color: #ff4444 !important;
+  }}
+
+  .train-table td.train-due-soon {{
+    color: #ffdd00 !important;
+  }}
+
+  #live-clock {{
+    margin-top: 40px;
+    text-align: center;
+    font-size: 2.4rem;
+    color: #ffdd00;
+    font-family: "DejaVu Sans Mono", "Consolas", monospace;
+  }}
+</style>
+
+</head>
+<body>
+
+<h1>{heading}</h1>
+
+<div class="grid">
+{content}
+</div>
+
+<div id="live-clock"></div>
+
+<script>
+function updateClock() {{
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+
+    document.getElementById("live-clock").textContent =
+        hours + ":" + minutes + ":" + seconds;
+}}
+
+setInterval(updateClock, 1000);
+updateClock();
+</script>
+
+</body>
+</html>
