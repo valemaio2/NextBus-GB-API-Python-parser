@@ -45,7 +45,7 @@ I have included the bus stop code list for Cardiff in file *bus stop codes.xlsx*
 ## Usage:
 ### One-line installation:
 ```
-bash <(curl -fsSL https://raw.githubusercontent.com/valemaio2/NextBus-GB-API-Python-parser/main/installer.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/valemaio2/NextBus-GB-API-Python-parser/refs/heads/master/installer.sh)
 ```
 
 ### Manual installation:
