@@ -197,6 +197,11 @@ syncTime().then(() => {{
 }});
 
 setInterval(syncTime, 10 * 60 * 1000);
+
+// Auto-refresh the page every 60 seconds
+setInterval(() => {{
+    location.reload();
+}}, 60000);
 </script>
 
 </body>
