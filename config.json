@@ -3,25 +3,32 @@
   "api_password": "yourAPIpassword",
   "data": "./data",
   "html": "./html",
+
   "stops": [
     {
       "stop_id": "5710AWA11479",
       "stop_name": "Colin way"
     },
-    {
+    { 
       "stop_id": "5710AWA11571",
       "stop_name": "Heol-y-Felin"
     },
-    {
+    { 
       "stop_id": "9100KNGX",
       "stop_name": "Waun-gron"
     },
-    {
+    { 
       "stop_id": "5710AWA11320",
       "stop_name": "Ely Bridge"
     }
   ],
+
+  "train_station": {
+    "crs": "WNG",
+    "name": "Waun-Gron Park"
+  },
+
   "num_departures": 6,
   "output_html_file": "buses.html",
-  "output_html_title": "Live buses departures"
+  "output_html_title": "Live Bus/Train Timetable"
 }
