@@ -48,6 +48,8 @@ I have included the bus stop code list for Cardiff in file *bus stop codes.xlsx*
 bash <(curl -fsSL https://raw.githubusercontent.com/valemaio2/NextBus-GB-API-Python-parser/refs/heads/master/installer.sh)
 ```
 
+The one-liner installer is not for unattended installations: it will ask you if you want to set a python virtual environment, then ask for the ATCO codes you're interested seeing the arrival times, the train stations as well, plus your Traveline API credentials. Read below how to obtain all of those.
+
 ### Manual installation:
 * Install python3 and pip
 * Install pip requirements in requirements.txt (Flask, flask-cors, requests, beautifulsoup4)
