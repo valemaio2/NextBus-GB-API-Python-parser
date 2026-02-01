@@ -1,72 +1,197 @@
-import bus
 import os
 import sys
+from collections import defaultdict
+from bs4 import BeautifulSoup
+from datetime import datetime, timezone
+import bus
 
+# ---------------------------------------------------------
+# Load configuration
+# ---------------------------------------------------------
 try:
     config_file = sys.argv[1]
-except:
-    print("Config file not specified")
+except IndexError:
+    print("Usage: generate.py <config.json>")
     sys.exit(1)
 
 settings = bus.open_settings(config_file)
 
-data_path = settings['data']
-html_path = settings['html']
-output_html_filename = os.path.join(html_path, settings['output_html_file'])
+data_path = settings["data"]
+html_path = settings["html"]
+output_html_filename = os.path.join(html_path, settings["output_html_file"])
+page_title = settings["output_html_title"]
 
-# Get all departures
+# Train station config
+train_crs = settings["train_station"]["crs"]
+train_name = settings["train_station"]["name"]
+
+num_deps = settings["num_departures"]
+
+# ---------------------------------------------------------
+# Load BUS departures
+# ---------------------------------------------------------
 all_departures = []
 
-stops = settings['stops']
-num_deps = settings['num_departures']
-for stop in stops:
+for stop in settings["stops"]:
+    xml_file = os.path.join(data_path, stop["stop_id"] + ".latest.xml")
+    deps = bus.convert_xmlfile_to_array(xml_file, stop["stop_name"])[:num_deps]
+    all_departures.extend(deps)
 
-    filename = os.path.join(data_path, stop['stop_id']) + ".latest.xml"
-    departures = bus.convert_xmlfile_to_array(filename, stop['stop_name'])[:num_deps]
+# ---------------------------------------------------------
+# TRAIN PARSER (Realtime Trains simple view)
+# ---------------------------------------------------------
+def parse_train_html(filename, station_name):
+    with open(filename, encoding="utf-8") as f:
+        html = f.read()
 
-    all_departures.extend(departures)
+    soup = BeautifulSoup(html, "html.parser")
+    results = []
+    today = datetime.now(timezone.utc).date()
 
-page_template = """
-<!doctype html>
-<html lang="en">
-  <head>
-    <!-- Required meta tags -->
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    for svc in soup.select("a.service"):
+        # Scheduled time
+        time_div = svc.select_one(".time")
+        if not time_div:
+            continue
 
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+        raw = time_div.get_text(strip=True)
+        if len(raw) == 4 and raw.isdigit():
+            sched = raw[:2] + ":" + raw[2:]
+        else:
+            continue
 
-    <title>%s</title>
-  </head>
-  <body>
-    <h1>%s</h1>
+        # Destination
+        dest_span = svc.select_one(".location span")
+        if not dest_span:
+            continue
+        dest = dest_span.get_text(strip=True)
 
-    %s
+        # Platform
+        plat_div = svc.select_one(".platformbox")
+        plat = plat_div.get_text(strip=True) if plat_div else ""
 
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-  </body>
-</html>
-"""
+        # Expected time
+        addl = svc.select_one(".addl")
+        exp_raw = addl.get_text(" ", strip=True) if addl else ""
 
-page_title = settings['output_html_title']
+        if "Expected at" in exp_raw:
+            hhmm = exp_raw.split()[-1]
+            if len(hhmm) == 4 and hhmm.isdigit():
+                exp = hhmm[:2] + ":" + hhmm[2:]
+            else:
+                exp = sched
+        elif len(exp_raw) == 4 and exp_raw.isdigit():
+            exp = exp_raw[:2] + ":" + exp_raw[2:]
+        elif len(exp_raw) == 5 and exp_raw[2] == ":":
+            exp = exp_raw
+        else:
+            exp = sched
 
-row_wrapper = "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td class='%s'>%s</td></tr>"
+        sched_dt = datetime.strptime(sched, "%H:%M").replace(
+            year=today.year, month=today.month, day=today.day, tzinfo=timezone.utc
+        )
+        exp_dt = datetime.strptime(exp, "%H:%M").replace(
+            year=today.year, month=today.month, day=today.day, tzinfo=timezone.utc
+        )
 
-content = "<table class='table table-striped'>"
-content = content + "<thead class='thead-dark'>"
-content = content + "<tr><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>" % ("Date", "Bus Stop", "Line", "Direction", "Scheduled Departure Time",  "Expected Departure Time")
-content = content + "</thead>"
+        results.append({
+            "bus_stop": station_name,
+            "line_name": "Train",
+            "direction": dest,
+            "scheduled_departure": sched_dt,
+            "expected_departure": exp_dt,
+            "platform": plat,
+        })
 
+    return results
+
+# ---------------------------------------------------------
+# Load TRAIN departures
+# ---------------------------------------------------------
+train_file = os.path.join(data_path, "train.latest.html")
+train_departures = parse_train_html(train_file, train_name)[:num_deps]
+
+# ---------------------------------------------------------
+# Load HTML template
+# ---------------------------------------------------------
+template_path = os.path.join(os.path.dirname(__file__), "template.html")
+
+with open(template_path, "r", encoding="utf-8") as f:
+    page_template = f.read()
+
+# ---------------------------------------------------------
+# Build HTML content
+# ---------------------------------------------------------
+content = ""
+
+# Group bus departures by stop
+grouped = defaultdict(list)
 for d in all_departures:
-    status = ""
-    content = content + row_wrapper % (d['date'].astimezone().strftime("%Y-%m-%d"), d['bus_stop'], d['line_name'], d['direction'], d['scheduled_departure'].astimezone().strftime("%H:%M"), status, d['expected_departure'].astimezone().strftime("%H:%M"))
+    grouped[d["bus_stop"]].append(d)
 
-content = content + "</table>"
+# BUS CARDS
+for stop_name, deps in grouped.items():
+    content += "<div class='stop-card'>"
+    content += f"<div class='stop-title'>{stop_name}</div>"
+    content += "<table>"
+    content += "<tr><th>Line</th><th>Direction</th><th>Sched</th><th>Exp</th></tr>"
 
-with open(output_html_filename, "w") as f:
-    f.write(page_template % (page_title, page_title, content))
+    for d in deps:
+        sched = d["scheduled_departure"].astimezone().strftime("%H:%M")
+        exp = d["expected_departure"].astimezone().strftime("%H:%M")
+
+        status_class = "on-time" if exp == sched else "delayed"
+
+        content += (
+            f"<tr>"
+            f"<td>{d['line_name']}</td>"
+            f"<td>{d['direction']}</td>"
+            f"<td>{sched}</td>"
+            f"<td class='{status_class}'>{exp}</td>"
+            f"</tr>"
+        )
+
+    content += "</table></div>"
+
+# TRAIN CARD
+content += "<div class='train-card'>"
+content += f"<div class='train-title'>{train_name} (Train)</div>"
+content += "<table class='train-table'>"
+content += "<tr><th>To</th><th>Sched</th><th>Exp</th><th>Plat</th></tr>"
+
+for t in train_departures:
+    sched = t["scheduled_departure"].astimezone().strftime("%H:%M")
+    exp = t["expected_departure"].astimezone().strftime("%H:%M")
+    plat = t.get("platform", "")
+
+    diff = int((t["expected_departure"] - t["scheduled_departure"]).total_seconds() / 60)
+
+    if diff <= 0:
+        status_class = "train-on-time"
+    elif diff <= 5:
+        status_class = "train-due-soon"
+    else:
+        status_class = "train-delayed"
+
+    content += (
+        f"<tr>"
+        f"<td>{t['direction']}</td>"
+        f"<td class='train-time'>{sched}</td>"
+        f"<td class='{status_class}'>{exp}</td>"
+        f"<td>{plat}</td>"
+        f"</tr>"
+    )
+
+content += "</table></div>"
+
+# ---------------------------------------------------------
+# Write final HTML
+# ---------------------------------------------------------
+with open(output_html_filename, "w", encoding="utf-8") as f:
+    f.write(page_template.format(
+        title=page_title,
+        heading=page_title,
+        content=content
+    ))
+
+print("Generated:", output_html_filename)
