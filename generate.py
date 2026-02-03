@@ -199,7 +199,7 @@ for station_name, deps in train_departures_by_station:
 # ---------------------------------------------------------
 # Timestamp (Europe/London)
 # ---------------------------------------------------------
-last_updated = datetime.now(ZoneInfo("Europe/London")).strftime("%Y-%m-%d %H:%M:%S")
+last_updated = datetime.now(ZoneInfo("Europe/London")).strftime("%d-%m-%Y %H:%M:%S")
 
 # ---------------------------------------------------------
 # Write final HTML
