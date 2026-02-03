@@ -62,10 +62,11 @@
   }}
 
   /* Bus column spacing */
-  td:nth-child(3),
-  td:nth-child(4),
-  td:nth-child(5) {{
-    padding-right: 24px;
+  td:nth-child(2),   /* Line */
+  td:nth-child(3),   /* Direction */
+  td:nth-child(4),   /* Sched */
+  td:nth-child(5) {{  /* Exp */
+      padding-right: 20px !important;
   }}
 
   .on-time {{
@@ -97,7 +98,7 @@
   .train-table td:nth-child(2),
   .train-table td:nth-child(3),
   .train-table td:nth-child(4) {{
-    padding-right: 24px !important;
+    padding-right: 20px !important;
     color: inherit !important;
   }}
 
@@ -154,7 +155,7 @@
 </div>
 
 <div id="live-clock"></div>
-<div id="last-updated">Last updated: {last_updated} (Europe/London)</div>
+<div id="last-updated">Last updated: {last_updated}</div>
 
 <script>
 let currentTime = null;
